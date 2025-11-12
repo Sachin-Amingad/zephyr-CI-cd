@@ -19,31 +19,10 @@ jobs:
 
       - name: Set up Zephyr SDK
         env:
-          ZSDK_VERSION: "0.16.5" # Leave empty ("") to always pull the latest release
+          ZSDK_VERSION: "0.16.5"
         run: |
           set -euo pipefail
-          DOWNLOAD_URL=$(python3 - <<'PY'
-import json, os, sys, urllib.request
-version = os.environ.get("ZSDK_VERSION", "").strip()
-if version:
-    release_url = f"https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases/tags/v{version}"
-else:
-    release_url = "https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases/latest"
-with urllib.request.urlopen(release_url) as resp:
-    release = json.load(resp)
-for asset in release.get("assets", []):
-    name = asset.get("name", "")
-    if name.endswith("linux-x86_64-setup.run"):
-        print(asset["browser_download_url"])
-        break
-else:
-    sys.exit("Zephyr SDK linux-x86_64 installer not found in release metadata.")
-PY
-)
-          wget -q "$DOWNLOAD_URL" -O zephyr-sdk-setup.run
-          chmod +x zephyr-sdk-setup.run
-          ./zephyr-sdk-setup.run -- -d $HOME/zephyr-sdk
-          echo "ZEPHYR_SDK_INSTALL_DIR=$HOME/zephyr-sdk" >> $GITHUB_ENV
+          python3 .github/scripts/install_zephyr_sdk.py
 
       - name: Install dependencies
         run: |

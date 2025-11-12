@@ -1,0 +1,66 @@
+name: CI/CD Pipeline for Zephyr
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Zephyr Project
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Zephyr SDK
+        run: |
+          wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.16.0/zephyr-sdk-0.16.0-setup.run
+          chmod +x zephyr-sdk-0.16.0-setup.run
+          ./zephyr-sdk-0.16.0-setup.run -- -d $HOME/zephyr-sdk
+          echo "export ZEPHYR_SDK_INSTALL_DIR=$HOME/zephyr-sdk" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build gperf python3-pip
+          pip3 install west
+
+      - name: Initialize Zephyr workspace
+        run: |
+          west init -l .
+          west update
+          west zephyr-export
+
+      - name: Build project
+        run: |
+          west build -b native_posix
+
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run unit tests
+        run: |
+          west build -t run
+
+  hil:
+    name: Hardware-in-the-Loop Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run HIL tests
+        run: |
+          # Replace with actual HIL test commands
+          echo "Running HIL tests..."

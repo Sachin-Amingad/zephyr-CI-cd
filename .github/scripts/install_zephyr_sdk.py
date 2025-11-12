@@ -40,19 +40,27 @@ def resolve_release(version: Optional[str]) -> Dict:
 
 
 def pick_installer_asset(release: Dict) -> Dict:
-    """Pick the standard linux setup.run installer asset."""
+    """Pick the standard Linux installer asset."""
     assets = release.get("assets", []) or []
+    linux_assets = []
     for asset in assets:
         name = asset.get("name", "")
         lowered = name.lower()
-        if not name.endswith(".run"):
+        if not lowered.endswith(".run"):
+            continue
+        if "linux" not in lowered or "x86_64" not in lowered:
+            continue
+        if "hosttools" in lowered:
             continue
         if "setup" not in lowered:
             continue
-        if "hosttools" in lowered or "windows" in lowered or "macos" in lowered:
-            continue
-        return asset
-    raise SystemExit("Zephyr SDK setup.run installer not found in release assets.")
+        linux_assets.append(asset)
+    if linux_assets:
+        return linux_assets[0]
+    asset_names = ", ".join(a.get("name", "<unknown>") for a in assets) or "<no assets>"
+    raise SystemExit(
+        f"Zephyr SDK linux installer not found. Available assets: {asset_names}"
+    )
 
 
 def download(url: str, destination: Path) -> None:

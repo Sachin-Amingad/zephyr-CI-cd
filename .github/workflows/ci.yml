@@ -20,6 +20,7 @@ jobs:
       - name: Set up Zephyr SDK
         env:
           ZSDK_VERSION: "0.16.5"
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 .github/scripts/install_zephyr_sdk.py

@@ -17,23 +17,29 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
+from typing import Dict, Optional
 
 
 REPO_RELEASES = "https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases"
 
 
-def resolve_release(version: str | None) -> dict:
+def resolve_release(version: Optional[str]) -> Dict:
     """Fetch the release metadata for a specific version or the latest release."""
     version = (version or "").strip()
     url = f"{REPO_RELEASES}/tags/v{version}" if version else f"{REPO_RELEASES}/latest"
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    headers = {"Accept": "application/vnd.github+json", "User-Agent": "zephyr-ci-cd"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     try:
-        with urllib.request.urlopen(url) as response:
+        request = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(request) as response:
             return json.load(response)
     except urllib.error.HTTPError as exc:
         raise SystemExit(f"Failed to fetch SDK release metadata from {url}: {exc}") from exc
 
 
-def pick_installer_asset(release: dict) -> dict:
+def pick_installer_asset(release: Dict) -> Dict:
     """Pick the standard linux setup.run installer asset."""
     assets = release.get("assets", []) or []
     for asset in assets:
